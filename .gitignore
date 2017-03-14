@@ -2,3 +2,5 @@
 
 /Listings
 /Objects
+*.uvgui.*
+*.uvopt
