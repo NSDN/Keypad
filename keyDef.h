@@ -48,7 +48,7 @@ enum Rows {
 	R0 = 0, R1 = 1, R2 = 2, R3 = 3
 };
 
-static char keyCode[2][4][10] = {
+static uint8_t keyCode[2][4][10] = {
 	/*Normal*/
 	/*16: sht, 8: bsp, 17: ctl, 18: alt, 13: ent, 0: null*/
 	{
@@ -67,7 +67,7 @@ static char keyCode[2][4][10] = {
 	}
 };
 
-char _scan(char row, char exc) {
+uint8_t _scan(char row, char exc, bit alt) {
 	P1 = 0xFF; P2 = 0xFF;
 	_nop_(); _nop_(); _nop_(); _nop_();
 	switch (row) {
@@ -79,7 +79,7 @@ char _scan(char row, char exc) {
 	}
 	delay(1);
 	
-#define __SCAN_(port, col) if (port == 0 && exc != keyCode[ALT_LCK][row][col]) return keyCode[ALT_LCK][row][col]
+#define __SCAN_(port, col) if (port == 0 && exc != keyCode[alt][row][col]) return keyCode[alt][row][col]
 	
 	__SCAN_(PC0, C0); __SCAN_(PC1, C1); __SCAN_(PC2, C2); __SCAN_(PC3, C3); __SCAN_(PC4, C4);
 	__SCAN_(PC5, C5); __SCAN_(PC6, C6); __SCAN_(PC7, C7); __SCAN_(PC8, C8); __SCAN_(PC9, C9);
@@ -87,57 +87,53 @@ char _scan(char row, char exc) {
 	return 0xFF;
 }
 
-char scanKey() {
-	char tmp = 0;
-	
-	tmp = _scan(R3, 0);
+uint8_t scanKey() {
+	uint8_t tmp = 0;
+	tmp = _scan(R3, 0, 0);
 	if (tmp == 17) {
 		/*ctl + ?*/
-		tmp = _scan(R3, 17);
+		tmp = _scan(R3, 17, ALT_LCK);
 		if (tmp == 18) {
-			while (tmp == 18) tmp = _scan(R3, 17);
+			while (tmp == 18) tmp = _scan(R3, 17, 0);
 			ALT_LCK = !ALT_LCK;
 			return 0xFF;
 		}
-		tmp = _scan(R2, 0);
+		tmp = _scan(R2, 0, ALT_LCK);
 		if (tmp == 16) {
-			while (tmp == 16) tmp = _scan(R2, 0);
+			while (tmp == 16) tmp = _scan(R2, 0, ALT_LCK);
 			SHT_LCK = !SHT_LCK;
 			return 0xFF;
 		} else if (tmp != 0xFF) return tmp + 0x80;
-		tmp = _scan(R1, 0);
+		tmp = _scan(R1, 0, ALT_LCK);
 		if (tmp != 0xFF) return tmp + 0x80;
-		tmp = _scan(R0, 0);
+		tmp = _scan(R0, 0, ALT_LCK);
 		if (tmp != 0xFF) return tmp + 0x80;
+		return 0xFF;
 	} else if (tmp == 18) {
 		/*alt + ?*/
-		ALT_LCK = 1;
-		tmp = _scan(R2, 16);
-		ALT_LCK = 0;
+		tmp = _scan(R2, 16, !ALT_LCK);
 		if (tmp != 0xFF) return tmp;
-		ALT_LCK = 1;
-		tmp = _scan(R1, 0);
-		ALT_LCK = 0;
+		tmp = _scan(R1, 0, !ALT_LCK);
 		if (tmp != 0xFF) return tmp;
-		ALT_LCK = 1;
-		tmp = _scan(R0, 0);
-		ALT_LCK = 0;
+		tmp = _scan(R0, 0, !ALT_LCK);
 		if (tmp != 0xFF) return tmp;
+		return 0xFF;
 	} else if (tmp != 0xFF) return tmp;
-	tmp = _scan(R2, 0);
-	if (tmp == 16) { 
+	tmp = _scan(R2, 0, ALT_LCK);
+	if (tmp == 16) {
 		/*sht + ?*/
-		tmp = _scan(R2, 16);
-		if (tmp != 0xFF) return tmp - 0x20;
-		tmp = _scan(R1, 0);
-		if (tmp != 0xFF) return tmp - 0x20;
-		tmp = _scan(R0, 0);
-		if (tmp != 0xFF) return tmp - 0x20;
-	} else if (tmp != 0xFF) return tmp;
-	tmp = _scan(R1, 0);
-	if (tmp != 0xFF) return tmp;
-	tmp = _scan(R0, 0);
-	if (tmp != 0xFF) return tmp;
+		tmp = _scan(R2, 16, ALT_LCK);
+		if (tmp != 0xFF) return tmp - ((tmp >= 'a' && tmp <= 'z') ? 0x20 : 0);
+		tmp = _scan(R1, 0, ALT_LCK);
+		if (tmp != 0xFF) return tmp - ((tmp >= 'a' && tmp <= 'z') ? 0x20 : 0);
+		tmp = _scan(R0, 0, ALT_LCK);
+		if (tmp != 0xFF) return tmp - ((tmp >= 'a' && tmp <= 'z') ? 0x20 : 0);
+		return 0xFF;
+	} else if (tmp != 0xFF) return tmp - ((SHT_LCK && (tmp >= 'a' && tmp <= 'z')) ? 0x20 : 0);
+	tmp = _scan(R1, 0, ALT_LCK);
+	if (tmp != 0xFF) return tmp - ((SHT_LCK && (tmp >= 'a' && tmp <= 'z')) ? 0x20 : 0);
+	tmp = _scan(R0, 0, ALT_LCK);
+	if (tmp != 0xFF) return tmp - ((SHT_LCK && (tmp >= 'a' && tmp <= 'z')) ? 0x20 : 0);
 	
 	return 0xFF;
 }
