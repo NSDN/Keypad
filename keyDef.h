@@ -92,16 +92,18 @@ uint8_t scanKey() {
 	tmp = _scan(R3, 0, 0);
 	if (tmp == 17) {
 		/*ctl + ?*/
-		tmp = _scan(R3, 17, ALT_LCK);
+		tmp = _scan(R3, 17, 0);
 		if (tmp == 18) {
 			while (tmp == 18) tmp = _scan(R3, 17, 0);
 			ALT_LCK = !ALT_LCK;
+			SHT_LCK = 0;
 			return 0xFF;
 		}
-		tmp = _scan(R2, 0, ALT_LCK);
+		tmp = _scan(R2, 0, 0);
 		if (tmp == 16) {
-			while (tmp == 16) tmp = _scan(R2, 0, ALT_LCK);
+			while (tmp == 16) tmp = _scan(R2, 0, 0);
 			SHT_LCK = !SHT_LCK;
+			ALT_LCK = 0;
 			return 0xFF;
 		} else if (tmp != 0xFF) return tmp + 0x80;
 		tmp = _scan(R1, 0, ALT_LCK);
